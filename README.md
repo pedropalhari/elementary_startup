@@ -1,14 +1,5 @@
-# node-ts-boilerplate
+# elementary startup
 
-Boilerplate for starting node.js and typescript servers already with yarn. 
+Script para posicionar as janelas que eu quero nos workspaces e monitores que eu quero no elementary. 
 
-## Installing
-
-`npx degit pedropalhari/node-ts-boilerplate my-project`
-
-## Commands
-
-- `yarn start`: runs the distributed copy on `dist/index.js`
-- `yarn dev`: starts the typescript compiler on watch mode (`tsc -w`)
-  - in `tsconfig.json` you can set the properties on `outDir` and `rootDir`
-# elementary_startup
+Tá tudo comentado, caso queira fazer o mesmo, pode usar como base.

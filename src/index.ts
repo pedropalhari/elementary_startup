@@ -1,13 +1,17 @@
 import "source-map-support/register";
 import { spawn, exec, ExecException } from "child_process";
 
+/**
+ * Spawna as janelas, espera todas elas aparecerem, pega o id delas junto com os nomes dos processos, modifica elas de acordo
+ */
 (async () => {
-  //await spawnAllWindows();
+  await spawnAllWindows(); //spawna
 
-  let windows = await waitForAllWindowsToSpawn();
+  let windows = await waitForAllWindowsToSpawn(); //espera aparecer (contagem, pode ter repetidas)
 
   let chromeAlreadyPassed = false; //um chrome na esquerda, outro na direita
 
+  //modifica
   for (let i = 0; i < windows.length; i++) {
     let { windowId, windowName } = windows[i];
 
@@ -48,6 +52,9 @@ import { spawn, exec, ExecException } from "child_process";
   process.exit();
 })();
 
+/**
+ * Função que spawna as janelas
+ */
 async function spawnAllWindows() {
   return [
     spawn("flatpak", ["run", "com.spotify.Client"], {
@@ -78,6 +85,10 @@ async function spawnAllWindows() {
   ];
 }
 
+/**
+ * Função que espera as janelas spawnarem, contando a cada 100ms se
+ *  já apareceram as janelas dos processos que eu quero
+ */
 async function waitForAllWindowsToSpawn() {
   //2 chromes, 1 spotify, 1 discord, 1 terminal
   while (true) {
@@ -115,6 +126,13 @@ type WindowCommand =
   | "MOVE_TO_WORKSPACE"
   | "MOVE_TO_MONITOR"
   | "MOVE_TO_POSITION";
+
+/**
+ * Função que engloba a lib wmctrl para deixar mais fácil de eu executar os comandos dela
+ * @param windowId
+ * @param type
+ * @param args
+ */
 async function windowCommand(
   windowId: string,
   type: WindowCommand,
@@ -159,8 +177,33 @@ async function windowCommand(
   }
 }
 
-async function removeFullscreenFromWindow(windowId: string) {}
+/**
+ * Função de ajuda que junta vários comandos de tela para fazer o que eu quero em uma função só.
+ * Tem que minimizar pra mover o monitor, então minimiza -> move workspace e monitor -> maximiza
+ * @param param0
+ */
+async function moveToWorkspaceMonitor({
+  windowId,
+  workspaceNumber,
+  monitorNumber
+}: {
+  windowId: string;
+  workspaceNumber: number;
+  monitorNumber: number;
+}) {
+  await windowCommand(windowId, "REMOVE_FULLSCREEN"); //as vezes buga ai fica bom
+  await windowCommand(windowId, "MOVE_TO_WORKSPACE", {
+    workspaceNumber
+  });
+  await windowCommand(windowId, "MOVE_TO_MONITOR", {
+    monitorNumber
+  });
+  await windowCommand(windowId, "ADD_FULLSCREEN");
+}
 
+/**
+ * Função que retorna todas as janelas, com filtro, que já foram spawnadas
+ */
 async function getWindows() {
   let windowsArray = await (await promisifiedExec("wmctrl -lp")).stdout
     .split("\n")
@@ -194,6 +237,10 @@ async function getWindows() {
   return windowsArray;
 }
 
+/**
+ * Função de ajuda pra pegar o nome do processo pelo PID
+ * @param pid
+ */
 async function getProcessNameFromPID(pid: string) {
   let { stdout } = await promisifiedExec(`ps -p ${pid} -o comm=`);
 
@@ -202,6 +249,10 @@ async function getProcessNameFromPID(pid: string) {
   return stdout;
 }
 
+/**
+ * Promisifiquei a função `exec`
+ * @param command
+ */
 function promisifiedExec(
   command: string
 ): Promise<{ error: ExecException | null; stdout: string; stderr: string }> {
@@ -212,29 +263,14 @@ function promisifiedExec(
   });
 }
 
+/**
+ * Delayzinho maroto
+ * @param ms
+ */
 async function delay(ms: number) {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve();
     }, ms);
   });
-}
-
-async function moveToWorkspaceMonitor({
-  windowId,
-  workspaceNumber,
-  monitorNumber
-}: {
-  windowId: string;
-  workspaceNumber: number;
-  monitorNumber: number;
-}) {
-  await windowCommand(windowId, "REMOVE_FULLSCREEN"); //as vezes buga ai fica bom
-  await windowCommand(windowId, "MOVE_TO_WORKSPACE", {
-    workspaceNumber
-  });
-  await windowCommand(windowId, "MOVE_TO_MONITOR", {
-    monitorNumber
-  });
-  await windowCommand(windowId, "ADD_FULLSCREEN");
 }
